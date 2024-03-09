@@ -1,31 +1,57 @@
 import java.io.*;
+import java.text.Normalizer;
 import java.util.*;
 
 public class Crawler {
 
   public static void main(String[] args) throws Exception {
 
-    if (args.length < 2) {
-      System.out.println("ERROR. Ejecutar: >java Crawler.java directorio fichero_salida");
-      return;
+    File diccionario = new File("diccionario.ser");
+    TreeMap<String, Integer> dicc = new TreeMap<String, Integer>(String.CASE_INSENSITIVE_ORDER);
+
+    if (diccionario.exists()) {
+      dicc = cargarObjeto(diccionario, dicc);
+    } else {
+      crawl("test", dicc);
+      salvarObjeto("diccionario.ser", dicc);
     }
 
-    String directorio = args[0];
-    String ficheroSalida = args[1];
+    File thesauro = new File("thesauro.ser");
+    TreeMap<String, List<String>> thes = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
 
-    crawl(directorio, ficheroSalida);
+    if (thesauro.exists()) {
+      thes = cargarObjeto(thesauro, thes);
+    } else {
+      crawlThesauro("Thesaurus_es_ES.txt", thes);
+      salvarObjeto("thesauro.ser", thes);
+    }
+
+    // Consultar diccionario y thesauro
+    consultarDiccionario(dicc);
+    consultarThesauro(thes);
 
   }
 
-  public static void crawl(String directorioRaiz, String ficheroSalida) throws Exception {
+  public static <K, V> TreeMap<K, V> cargarObjeto(File fichero, TreeMap<K, V> object) {
+
+    try {
+      FileInputStream fis = new FileInputStream(fichero);
+      ObjectInputStream ois = new ObjectInputStream(fis);
+      object = (TreeMap<K, V>) ois.readObject();
+      ois.close();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+    return object;
+  }
+
+  public static void crawl(String directorioRaiz, TreeMap<String, Integer> diccionarioTerminos) throws Exception {
 
     File raiz = new File(directorioRaiz);
     if (!raiz.exists() || !raiz.canRead()) {
       System.out.println("ERROR. No se puede leer el directorio: " + directorioRaiz);
       return;
     }
-
-    Map<String, Integer> diccionarioTerminos = new TreeMap<String, Integer>();
 
     if (raiz.isDirectory()) {
       List<File> listaDirectorios = new LinkedList<File>();
@@ -34,7 +60,6 @@ public class Crawler {
     } else {
       fichContPalabras(raiz, diccionarioTerminos);
     }
-    escribirFicheroSalida(diccionarioTerminos, ficheroSalida);
   }
 
   public static void listIt(List<File> listaDirectorios, Map<String, Integer> diccionarioTerminos) throws Exception {
@@ -76,18 +101,75 @@ public class Crawler {
     br.close();
   }
 
-  public static void escribirFicheroSalida(Map<String, Integer> diccionarioTerminos, String ficheroSalida)
-      throws Exception {
+  public static <K, V> void salvarObjeto(String nombreFichero, TreeMap<K, V> object) {
 
-    List<String> claves = new ArrayList<String>(diccionarioTerminos.keySet());
-    Collections.sort(claves);
-
-    PrintWriter pr = new PrintWriter(new FileWriter(ficheroSalida));
-    Iterator<String> i = claves.iterator();
-    while (i.hasNext()) {
-      Object k = i.next();
-      pr.println(k + " : " + diccionarioTerminos.get(k));
+    try {
+      FileOutputStream fos = new FileOutputStream(nombreFichero);
+      ObjectOutputStream oos = new ObjectOutputStream(fos);
+      oos.writeObject(object);
+      oos.close();
+    } catch (Exception e) {
+      System.out.println(e);
     }
-    pr.close();
   }
+
+  public static void consultarDiccionario(TreeMap<String, Integer> dicc) {
+
+    Scanner teclado = new Scanner(System.in);
+
+    while (true) {
+      System.out.println("Introduzca palabra a buscar en el diccionario: (000 para salir)");
+      String palabra = teclado.nextLine();
+      if (palabra.equals("000")) {
+        break;
+      }
+      if (dicc.containsKey(palabra)) {
+        System.out.println("La palabra " + palabra + " aparece " + dicc.get(palabra) + " veces");
+      } else {
+        System.out.println("La palabra " + palabra + " no aparece en el diccionario");
+      }
+    }
+  }
+
+  public static void crawlThesauro(String archivo, TreeMap<String, List<String>> thes) {
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(archivo));
+      String linea;
+      while ((linea = br.readLine()) != null) {
+        if (!linea.startsWith("#")) {
+          StringTokenizer st = new StringTokenizer(linea, ";"); // Separadores
+          String palabra = st.nextToken();
+          List<String> sinonimos = new ArrayList<>();
+          while (st.hasMoreTokens()) {
+            sinonimos.add(st.nextToken());
+          }
+          thes.put(palabra, sinonimos);
+        }
+      }
+      br.close();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+  }
+
+  public static void consultarThesauro(TreeMap<String, List<String>> thes) {
+
+    Scanner teclado = new Scanner(System.in);
+
+    while (true) {
+      System.out.println("Introduzca palabra a buscar en el Thesauro: (000 para salir)");
+      String palabra = teclado.nextLine();
+      if (palabra.equals("000")) {
+        break;
+      }
+      if (thes.containsKey(palabra)) {
+        List<String> sinonimos = thes.get(palabra);
+        System.out.println("Sinónimos de " + palabra + ": " + sinonimos);
+      } else {
+        System.out.println("La palabra " + palabra + " no aparece en el thesauro");
+      }
+    }
+    teclado.close();
+  }
+
 }
