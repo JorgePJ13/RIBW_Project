@@ -1,0 +1,49 @@
+
+19-02-24:
+    Grupos de 2 o solo.
+    Recomendado hacer tanto iterativo como recursivo.
+    
+    Utilizando listit configurar un crawler que cuente las palabras de los ficheros de un directorio raiz y todos los siguientes.
+    While lista no vacia if fichero añade palabras al contador if es directorio lista los ficheros y los procesa.
+
+26-02-24:
+    Hay que modular lo del Crawler de la semana pasada.
+    No hacer todo en el main.
+    Diccionario.set 
+    Thesauro (el separador son los ;) (Es un treemap)
+    Si la palabra se encuentra en el SopWords no se guarda en nuestro diccionario.
+    Elegir Thesauro o SopWords.
+    Todo se guarda en minúsculas y sin acentos.
+    A los métodos de carga y guardado que se les pase un nombrefichero y un puntero al objeto.
+    Crear un método llamado consultas 
+
+    if("diccionario.ser" existe)
+        código de readObject("diccionario.ser") y lo guardo en diccionario(treeMap)
+    else    
+        Crawling(lo de la semana pasada) y lo guardo en diccionarioTerminos (treemap)
+
+    if ("Thesauro.ser")
+        codigo readObject("Thesaurus") y lo guardo en (Thresaurus-es.txt, Thesaurus (tremap))
+    else
+        Crawling de Thresaurus-es.txt y lo guardo en el Thesaurus (tremap)
+        writeObject (thesaurus)
+
+    Consultas   
+        While (!fin)
+            - pedir un término (t) al usuario
+            - dvolver map.get(t)
+
+11-03-24:
+    GUARDAR LAS PALABRAS EN .toLOWERCASE Y QUITAR ACENTOS (normalize)
+    //private varable global los maps dicc y thesaurus
+    El Dicc tiene el String y luego un Objec (ocurrencia) que contiene Int frecuencia (FT) y 
+        guarda la url /dir1/f1.txt (path completo) (metodo getAbsolutePath) de los fichero em ñps qie aparece.
+    Clase ocurrencia implemets Serializable
+        Integer FT (frecuencia del término)
+        Map FTURL = new TreeMap <String, Integer>
+        Setters/getters
+        Metodos de consulta y actualización
+    Si busco una palabra, que me diga sus sinónimos (una lista)
+    Extra:
+        Guardar las urls en una lista (cada una tiene un id asociado) y dicho id es lo que guardo luego en 
+        Ocurrencia en lugar de la url

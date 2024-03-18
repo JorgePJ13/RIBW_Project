@@ -1,186 +1,180 @@
+package paquete;
+
 import java.io.*;
 import java.text.Normalizer;
 import java.util.*;
 
 public class Crawler {
 
-	public static void main(String[] args) throws Exception {
+  private static TreeMap<String, Ocurrencia> diccionarioTerminos;
+  private static TreeMap<String, ArrayList<String>> thesauro;
+  private ArrayList<String> urls;
 
-		File diccionario = new File("diccionario.ser");
-		TreeMap<String, Integer> dicc = new TreeMap<String, Integer>(String.CASE_INSENSITIVE_ORDER);
+  public static void main(String[] args) throws Exception {
 
-		if (diccionario.exists()) {
-			dicc = cargarObjeto(diccionario, dicc);
-		} else {
-			crawl("test", dicc);
-			salvarObjeto("diccionario.ser", dicc);
-		}
+    File thesauri = new File("thesauro.ser");
+    thesauro = new TreeMap<String, ArrayList<String>>();
 
-		File thesauro = new File("thesauro.ser");
-		TreeMap<String, List<String>> thes = new TreeMap<String, List<String>>(String.CASE_INSENSITIVE_ORDER);
+    if (thesauri.exists()) {
+      thesauro = cargarObjeto(thesauri, thesauro);
+    } else {
+      crawlThesauro("Thesaurus_es_ES.txt");
+      salvarObjeto("thesauro.ser", thesauro);
+    }
 
-		if (thesauro.exists()) {
-			thes = cargarObjeto(thesauro, thes);
-		} else {
-			crawlThesauro("Thesaurus_es_ES.txt", thes);
-			salvarObjeto("thesauro.ser", thes);
-		}
+    File diccionario = new File("diccionario.ser");
+    diccionarioTerminos = new TreeMap<String, Ocurrencia>();
 
-		// Consultar diccionario y thesauro
-		consultarDiccionario(dicc);
-		consultarThesauro(thes);
+    if (diccionario.exists()) {
+      diccionarioTerminos = cargarObjeto(diccionario, diccionarioTerminos);
+    } else {
+      crawl("test");
+      salvarObjeto("diccionario.ser", diccionarioTerminos);
+    }
 
-	}
+    // Consultar diccionario
+    consultarDiccionario();
 
-	public static <K, V> TreeMap<K, V> cargarObjeto(File fichero, TreeMap<K, V> object) {
+  }
 
-		try {
-			FileInputStream fis = new FileInputStream(fichero);
-			ObjectInputStream ois = new ObjectInputStream(fis);
-			object = (TreeMap<K, V>) ois.readObject();
-			ois.close();
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-		return object;
-	}
+  @SuppressWarnings("unchecked")
+  public static <K, V> TreeMap<K, V> cargarObjeto(File fichero, TreeMap<K, V> object) {
 
-	public static void crawl(String directorioRaiz, TreeMap<String, Integer> diccionarioTerminos) throws Exception {
+    try {
+      FileInputStream fis = new FileInputStream(fichero);
+      ObjectInputStream ois = new ObjectInputStream(fis);
+      object = (TreeMap<K, V>) ois.readObject();
+      ois.close();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+    return object;
+  }
 
-		File raiz = new File(directorioRaiz);
-		if (!raiz.exists() || !raiz.canRead()) {
-			System.out.println("ERROR. No se puede leer el directorio: " + directorioRaiz);
-			return;
-		}
+  public static void crawl(String directorioRaiz) throws Exception {
 
-		if (raiz.isDirectory()) {
-			List<File> listaDirectorios = new LinkedList<File>();
-			listaDirectorios.add(raiz);
-			listIt(listaDirectorios, diccionarioTerminos);
-		} else {
-			fichContPalabras(raiz, diccionarioTerminos);
-		}
-	}
+    File raiz = new File(directorioRaiz);
+    if (!raiz.exists() || !raiz.canRead()) {
+      System.out.println("ERROR. No se puede leer el directorio: " + directorioRaiz);
+      return;
+    }
 
-	public static void listIt(List<File> listaDirectorios, Map<String, Integer> diccionarioTerminos) throws Exception {
+    if (raiz.isDirectory()) {
+      List<File> listaDirectorios = new LinkedList<File>();
+      listaDirectorios.add(raiz);
+      listIt(listaDirectorios);
+    } else {
+      fichContPalabras(raiz);
+    }
+  }
 
-		while (!listaDirectorios.isEmpty()) {
-			File directorio = listaDirectorios.remove(0);
-			File[] ficheros = directorio.listFiles();
-			for (File f : ficheros) {
-				if (f.isDirectory()) {
-					listaDirectorios.add(f);
-				} else {
-					fichContPalabras(f, diccionarioTerminos);
-				}
-			}
-		}
-	}
+  public static void listIt(List<File> listaDirectorios) throws Exception {
 
-	public static void fichContPalabras(File fichero, Map<String, Integer> diccionarioTerminos) throws Exception {
+    while (!listaDirectorios.isEmpty()) {
+      File directorio = listaDirectorios.remove(0);
+      File[] ficheros = directorio.listFiles();
+      for (File f : ficheros) {
+        if (f.isDirectory()) {
+          listaDirectorios.add(f);
+        } else {
+          fichContPalabras(f);
+        }
+      }
+    }
+  }
 
-		BufferedReader br = new BufferedReader(new FileReader(fichero));
-		String linea;
+  public static void fichContPalabras(File fichero)
+      throws Exception {
 
-		while ((linea = br.readLine()) != null) {
-			StringTokenizer st = new StringTokenizer(linea, " ,.:;(){}!°?\t''%/|[]<=>&#+*$-¨^~"); // Separadores
-			while (st.hasMoreTokens()) {
-				String s = st.nextToken();
-				Object o = diccionarioTerminos.get(s);
-				if (o == null)
-					// diccionarioTerminos.put(s, new Integer(1));
-					diccionarioTerminos.put(s, Integer.valueOf(1));
-				else {
-					Integer cont = (Integer) o;
-					// diccionarioTerminos.put(s, new Integer(cont.intValue() + 1));
-					diccionarioTerminos.put(s, Integer.valueOf(cont.intValue() + 1));
-				}
-			}
-		}
-		br.close();
-	}
+    BufferedReader br = new BufferedReader(new FileReader(fichero));
+    String linea;
 
-	public static <K, V> void salvarObjeto(String nombreFichero, TreeMap<K, V> object) {
+    Ocurrencia ocurrencia;
+    ArrayList<String> sinonimos = new ArrayList<>();
+    String path = fichero.getAbsolutePath();
+    System.out.println("HOLAAAAAAAAA FICHERO EN: " + path);
 
-		try {
-			FileOutputStream fos = new FileOutputStream(nombreFichero);
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			oos.writeObject(object);
-			oos.close();
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
+    while ((linea = br.readLine()) != null) {
+      StringTokenizer st = new StringTokenizer(linea, " ,.:;(){}!°?\t''%/|[]<=>&#+*$-¨^~"); // Separadores
+      while (st.hasMoreTokens()) {
+        String s = st.nextToken().toLowerCase();
+        s = Normalizer.normalize(s, Normalizer.Form.NFD)
+            .replaceAll("[^\\p{ASCII}]", "");
 
-	public static void consultarDiccionario(TreeMap<String, Integer> dicc) {
+        Object o = diccionarioTerminos.get(s);
+        if (o == null) {
+          // diccionarioTerminos.put(s, new Integer(1));
+          // diccionarioTerminos.put(s, Integer.valueOf(1));
+          sinonimos = thesauro.get(s);
+          ocurrencia = new Ocurrencia(path, sinonimos);
+          diccionarioTerminos.put(s, ocurrencia);
+        }
 
-		Scanner teclado = new Scanner(System.in);
+        else {
+          //Integer cont = (Integer) o;
+          // diccionarioTerminos.put(s, new Integer(cont.intValue() + 1));
+          // diccionarioTerminos.put(s, Integer.valueOf(cont.intValue() + 1));
+          ocurrencia = (Ocurrencia) o;
+          ocurrencia.aumentarFrecuencia(path);
+        }
+      }
+    }
+    br.close();
 
-		while (true) {
-			System.out.println("Introduzca palabra a buscar en el diccionario: (000 para salir)");
-			String palabra = teclado.nextLine();
-			if (palabra.equals("000")) {
-				break;
-			}
+  }
 
-			String palabraNormalizada = eliminarTildes(palabra);
+  public static <K, V> void salvarObjeto(String nombreFichero, TreeMap<K, V> object) {
 
-			if (dicc.containsKey(palabraNormalizada)) {
-				System.out.println("La palabra " + palabra + " aparece " + dicc.get(palabraNormalizada) + " veces");
-			} else {
-				System.out.println("La palabra " + palabra + " no aparece en el diccionario");
-			}
-		}
-	}
+    try {
+      FileOutputStream fos = new FileOutputStream(nombreFichero);
+      ObjectOutputStream oos = new ObjectOutputStream(fos);
+      oos.writeObject(object);
+      oos.close();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+  }
 
-	public static void crawlThesauro(String archivo, TreeMap<String, List<String>> thes) {
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(archivo));
-			String linea;
-			while ((linea = br.readLine()) != null) {
-				if (!linea.startsWith("#")) {
-					StringTokenizer st = new StringTokenizer(linea, ";"); // Separadores
-					String palabra = st.nextToken();
-					List<String> sinonimos = new ArrayList<>();
-					while (st.hasMoreTokens()) {
-						sinonimos.add(st.nextToken());
-					}
-					thes.put(palabra, sinonimos);
-				}
-			}
-			br.close();
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
+  public static void consultarDiccionario() {
 
-	public static void consultarThesauro(TreeMap<String, List<String>> thes) {
+    Scanner teclado = new Scanner(System.in);
 
-		Scanner teclado = new Scanner(System.in);
+    while (true) {
+      System.out.println("Introduzca palabra a buscar en el diccionario: (000 para salir)");
+      String palabra = teclado.nextLine();
+      if (palabra.equals("000")) {
+        break;
+      }
+      if (diccionarioTerminos.containsKey(palabra)) {
+        System.out.println("La palabra " + palabra + " aparece " + diccionarioTerminos.get(palabra).getFT() + " veces");
+        
+        System.out.println("Sinónimos de " + palabra + ": " + diccionarioTerminos.get(palabra).getSinonimos());
+      } else {
+        System.out.println("La palabra " + palabra + " no aparece en el diccionario");
+      }
+    }
+    teclado.close();
+  }
 
-		while (true) {
-			System.out.println("Introduzca palabra a buscar en el Thesauro: (000 para salir)");
-			String palabra = teclado.nextLine();
-			if (palabra.equals("000")) {
-				break;
-			}
-
-			String palabraNormalizada = eliminarTildes(palabra);
-
-			if (thes.containsKey(palabraNormalizada)) {
-				List<String> sinonimos = thes.get(palabraNormalizada);
-				System.out.println("Sinónimos de " + palabra + ": " + sinonimos);
-			} else {
-				System.out.println("La palabra " + palabra + " no aparece en el thesauro");
-			}
-		}
-		teclado.close();
-	}
-
-	// Método que elimina las tildes
-	public static String eliminarTildes(String texto) {
-		return Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-				.toLowerCase();
-	}
+  public static void crawlThesauro(String archivo) {
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(archivo));
+      String linea;
+      while ((linea = br.readLine()) != null) {
+        if (!linea.startsWith("#")) {
+          StringTokenizer st = new StringTokenizer(linea, ";"); // Separadores
+          String palabra = st.nextToken();
+          ArrayList<String> sinonimos = new ArrayList<>();
+          while (st.hasMoreTokens()) {
+            sinonimos.add(st.nextToken());
+          }
+          thesauro.put(palabra, sinonimos);
+        }
+      }
+      br.close();
+    } catch (Exception e) {
+      System.out.println(e);
+    }
+  }
 
 }
