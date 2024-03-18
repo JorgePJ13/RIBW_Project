@@ -19,7 +19,8 @@ public class Ocurrencia implements Serializable {
 
     public Ocurrencia(String path, ArrayList<String> sinonimos){
 
-        this.FT = 1;
+    	this.FT = 1;
+    	this.FTURL = new TreeMap<>();
         this.FTURL.put(path, Integer.valueOf(1));
         this.sinonimos = sinonimos;
 
