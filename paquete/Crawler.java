@@ -1,5 +1,12 @@
 package paquete;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.SAXException;
+
 import java.io.*;
 import java.text.Normalizer;
 import java.util.*;
@@ -34,6 +41,9 @@ public class Crawler {
 
 		// Consultar diccionario
 		consultarDiccionario();
+
+		// parsear HTML
+		htmlParse("login.html");
 
 	}
 
@@ -178,6 +188,29 @@ public class Crawler {
 			br.close();
 		} catch (Exception e) {
 			System.out.println(e);
+		}
+	}
+
+	// Método para analizar un archivo HTML usando Apache Tika
+	public static void htmlParse(String filePath) throws IOException, TikaException, SAXException {
+		BodyContentHandler handler = new BodyContentHandler();
+		Metadata metadata = new Metadata();
+		FileInputStream inputstream = new FileInputStream(new File(filePath));
+		ParseContext pcontext = new ParseContext();
+
+		// Parsing del documento utilizando el parser HTML
+		HtmlParser htmlparser = new HtmlParser();
+		htmlparser.parse(inputstream, handler, metadata, pcontext);
+
+		// Obteniendo el contenido del documento
+		System.out.println("Contenido del HTML: " + handler.toString());
+		// Obteniendo los metadatos del documento
+		System.out.println("Metadatos del HTML:");
+
+		String[] metadataNames = metadata.names();
+
+		for (String name : metadataNames) {
+			System.out.println(name + " : " + metadata.get(name));
 		}
 	}
 
