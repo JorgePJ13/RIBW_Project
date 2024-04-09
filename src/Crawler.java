@@ -1,11 +1,4 @@
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -93,7 +86,8 @@ public class Crawler {
 			listIt(listaDirectorios);
 			// Si es un archivo, analiza su contenido
 		} else {
-			fichContPalabras(raiz);
+			String text = TikaParsers.parseFile(raiz);
+			fichContPalabras(raiz, text);
 		}
 	}
 
@@ -113,22 +107,23 @@ public class Crawler {
 					listaDirectorios.add(f);
 					// Si es un archivo, analiza su contenido
 				} else {
-					fichContPalabras(f);
-					// Tika
+					String text = TikaParsers.parseFile(f);
+					fichContPalabras(f, text);
 				}
 			}
 		}
 	}
 
 	/**
-	 * Analiza un archivo de texto para contar las ocurrencias de palabras.
+	 * Analiza un archivo de texto para contar las ocurrencias de palabras y actualizar el diccionario de términos.
 	 *
 	 * @param fichero Archivo de texto a analizar.
+	 * @param text    El texto extraído del archivo.
 	 * @throws IOException Si ocurre un error al leer el archivo.
 	 */
-	public static void fichContPalabras(File fichero) throws IOException {
+	public static void fichContPalabras(File fichero, String text) throws IOException {
 
-		BufferedReader br = new BufferedReader(new FileReader(fichero));
+		BufferedReader br = new BufferedReader(new StringReader(text));
 		String linea;
 
 		// Información sobre la ocurrencia de palabras
@@ -137,7 +132,7 @@ public class Crawler {
 		String path = fichero.getAbsolutePath();
 
 		while ((linea = br.readLine()) != null) {
-			StringTokenizer st = new StringTokenizer(linea, " ,.:;(){}!°?\t''%/|[]<=>&#+*$-¨^~"); // Separadores
+			StringTokenizer st = new StringTokenizer(linea, " ,.:;(){}!°?\t'%/|[]<=>&#+*$-¨^~"); // Separadores
 			while (st.hasMoreTokens()) {
 				String s = st.nextToken();
 				s = normalizarPalabra(s);
