@@ -42,8 +42,7 @@ public class TikaParsers {
                 break;
             case "html":
                 text = htmlParser(file);
-            case "xlsx":
-                text = excelParser(file);
+                break;
             default:
                 System.out.println("Error, los archivos de tipo " + extension + " no están soportados");
         }
@@ -133,29 +132,6 @@ public class TikaParsers {
 
         HtmlParser htmlParser = new HtmlParser();
         htmlParser.parse(inputStream, handler, metadata, parseContext);
-
-        return handler.toString();
-
-    }
-
-    /**
-     * Analiza un archivo Excel (.xlsx) y devuelve su contenido como texto.
-     *
-     * @param file El archivo Excel a analizar.
-     * @return El contenido del archivo como texto.
-     * @throws IOException   Si ocurre un error de lectura del archivo.
-     * @throws TikaException Si hay un error durante el análisis.
-     * @throws SAXException  Si hay un error SAX durante el análisis.
-     */
-    public static String excelParser(File file) throws IOException, TikaException, SAXException {
-
-        BodyContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        FileInputStream inputStream = new FileInputStream(file);
-        ParseContext parseContext = new ParseContext();
-
-        OOXMLParser msofficeparser  = new OOXMLParser();
-        msofficeparser .parse(inputStream, handler, metadata, parseContext);
 
         return handler.toString();
 

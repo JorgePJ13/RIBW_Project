@@ -129,9 +129,11 @@ public class Ocurrencia implements Serializable {
         System.out.println("Palabra consultada: " + palabra + " " + sinonimos);
         System.out.println("La frecuencia global del término es: " + FT);
 
-        FTURL.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(10)
-                .forEachOrdered(
-                        e -> System.out.println("En el archivo " + e.getKey() + " aparece " + e.getValue() + " veces"));
+        FTURL.entrySet()
+                .stream()
+                .sorted(Comparator.comparingInt((Map.Entry<String, Integer> entry) -> entry.getKey().length())
+                        .thenComparing(Map.Entry::getValue, Comparator.reverseOrder()))
+                .forEachOrdered(e -> System.out.println("En el archivo " + e.getKey() + " aparece " + e.getValue() + " veces"));
     }
 
 }
